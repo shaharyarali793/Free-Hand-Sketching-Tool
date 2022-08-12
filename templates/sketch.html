@@ -1,0 +1,174 @@
+{% extends 'index.html' %}
+
+{% block title %}
+  Canvas
+{% endblock title %}
+
+<!-- {% block heading %}
+   /match
+{% endblock heading %} -->
+
+{% block head %}
+   Image Matching
+{% endblock head %}
+
+{% block body %}
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+<link rel="stylesheet" href="../static/style.css">
+<link rel="stylesheet" href="../static/progress.css">
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+ <!-- <script type="text/javascript" src="{{ url_for('static',filename='index.js')}}"></script> -->
+
+<!-- <script src="/static/index.js"></script> -->
+
+
+<!-- <section class="step-wizard"> -->
+
+  {% set foo = "current-item" %}
+  <ul class="step-wizard-list">
+    
+      <li class="step-wizard-item
+      {%if Prediction == 'lip' %}
+      {{foo}}
+      {%endif%}">
+          <span class="progress-count">1</span>
+          <span class="progress-label">Lip</span>
+      </li>
+      
+      <li class="step-wizard-item
+      {%if Prediction == 'nose' %}
+      {{foo}}
+      {%endif%}">
+          <span class="progress-count">2</span>
+          <span class="progress-label">Nose</span>
+      </li>
+      
+      <li class="step-wizard-item
+      {%if Prediction == 'eyes' %}
+      {{foo}}
+      {%endif%} ">
+          <span class="progress-count">3</span>
+          <span class="progress-label">Eyes</span>
+      </li>
+
+      <li class="step-wizard-item ">
+        <span class="progress-count">4</span>
+        <span class="progress-label">Success</span>
+    </li>
+    </ul>
+
+<!-- <h3 class="heading" >
+  Free Hand Sketching Tool
+</h3> -->
+<div class="container">
+ 
+      <form method='POST' onsubmit="return prepare()" id="todo-form">
+
+        <input type="hidden" id="payload" name="payload" value="x">
+      
+       
+        <canvas id="canvas" width="900" height="500" style="margin-top:65px;margin-left:10px;float:left;border:3px solid; border-radius: 10px; cursor: crosshair;"></canvas>
+
+        <span style="color: red;margin-left:10px">{{msg}}</span>
+        <div class="button-container">
+          <button type="submit" class="btn btn-outline-success" style="margin-left:7%" id="predict">Predict</button>
+          <button type="button" class="btn btn-outline-danger" id="clearButton">Clear</button>  
+         <button type="button" class="btn btn-outline-warning" id="selectedOption" onclick='myfunction();'>Confirm</button>
+        </div>
+
+   
+        
+      </form>
+
+     
+
+      
+
+
+
+      
+   
+  <!-- Seggestion  -->
+  <div class="suggestion-list" id="image-suggestion">
+
+    <div class="suggestion" >
+      {% if image%}
+
+
+      <img src="{{url_for('static',filename=image)}} " >
+      <h4>{{Probability}} </h4>
+      <p>{{Prediction}}</p>
+  
+      <!-- <img src="{{image}} " > -->
+  
+    </div>
+    {%endif%}
+
+  </div>
+</div>
+
+
+
+ 
+  <script src="../static/index.js"></script>
+  <!-- <script type="text/javascript" src="{{ url_for('static',filename='index.js')}}"></script> -->
+  <script type="text/javascript">
+    function prepare() {
+      var canvasObj = document.getElementById("canvas");
+      var img = canvasObj.toDataURL();
+      document.getElementById("payload").value = img;
+
+          return true;
+        }
+    </script>
+
+<script>
+  var selectedDiv = "";
+  var x = document.getElementsByClassName('suggestion')
+  for (var i = 0; i < x.length; i++) {
+      x[i].addEventListener("click", function(){
+          
+      var selectedEl = document.querySelector(".selected");
+      if(selectedEl){
+          selectedEl.classList.remove("selected");
+      }
+      this.classList.add("selected");
+          
+      }, false);;
+  }
+ 
+
+    function myfunction() {
+
+    // const firstname = document.getElementById("fname").value;
+    // const lastname = document.getElementById("lname").value;
+    const selectedEl = document.querySelector(".selected");
+    const userInfo = selectedEl.getElementsByTagName('img').item(0).getAttribute("src")
+
+ 
+
+
+    const dict_values = {userInfo} //Pass the javascript variables to a dictionary.
+    const s = JSON.stringify(dict_values); // Stringify converts a JavaScript object or value to a JSON string
+    window.alert("Image Selected"); // Prints the variables to console window, which are in the JSON format
+    // window.alert(s)
+    $.ajax({
+        url:"/test",
+        type:"POST",
+        contentType: "application/json",
+        data: JSON.stringify(s)});
+
+        console.log("selected")
+
+    }
+    
+</script>
+
+
+
+
+
+{% endblock body %}

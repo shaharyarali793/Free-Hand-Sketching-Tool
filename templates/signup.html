@@ -1,0 +1,37 @@
+{% extends 'index.html' %}
+
+{% block title %}
+  Sign UP
+{% endblock title %}
+{% block heading %}
+
+ how it's work
+{% endblock heading %}
+
+{% block body %}
+
+
+
+<section class="login-clean">
+    <form onsubmit='signup()' method = "POST">
+        <h2 class="visually-hidden">Login Form</h2><small class="form-text" style="font-size: x-large;padding: 70px;">Signup</small>
+        <br>
+        <h4 style="text-align: center;">Enter Details</h4>
+        <div class="mb-3 mt-5"><input class="form-control" type="text" name="username" placeholder="Username" style="border-radius: 20px;" id='username'></div>
+        <div class="mb-3"><input class="form-control" type="email" name="email" placeholder="email" style="border-radius: 20px;" id='email'></div>
+        <div class="mb-3"><input class="form-control" type="password" name="password" placeholder="Password" style="border-radius: 20px;" id='password'></div>
+        <div class="mb-3"><button class="btn btn-primary d-block w-100" type="submit">Signup</button></div>
+
+    </form>
+</section>
+<script src=main.js></script>
+
+
+
+
+
+
+
+
+
+{% endblock body %}
