@@ -1,3 +1,4 @@
+
 from flask import Flask,render_template,request,redirect,jsonify
 # from sklearn.model_selection import train_test_split as tts
 # from keras.models import Sequential
@@ -7,7 +8,8 @@ from flask import Flask,render_template,request,redirect,jsonify
 # import numpy as np
 # import os
 from PIL import Image
-
+import re
+import os
 # import base64
 # # from PIL import Image
 # import os
@@ -46,7 +48,7 @@ import json
 
 app = Flask(__name__)
 
-model =  tf.keras.models.load_model("./model/parts_prediction(pro).h5")
+model =  tf.keras.models.load_model("./model/parts_prediction.h5")
 picfolder = os.path.join('static','suggestions')
 
 app.config['UPLOAD_FOLDER'] = picfolder
@@ -107,7 +109,10 @@ def signup():
 
 
 
-
+def clean():
+    file = open("data.txt",'r+')
+    file.truncate(0)
+    file.close()
 
 
 
@@ -116,6 +121,10 @@ def signup():
 
 @app.route("/")
 def main():
+    c = suggestion_valid()
+    print("Before Removing Address:"+" "+f"./static/vconcat_resize_({c}).jpg")
+    if os.path.exists(f"./static/vconcat_resize_({c}).jpg"):
+        os.remove(f"./static/vconcat_resize_({c}).jpg")
     file = open("data.txt",'r+')
     file.truncate(0)
     file.close()
@@ -126,6 +135,7 @@ def main():
 
 @app.route("/sketch", methods=["GET", "POST"])
 def ready():
+    steps = 0
     if request.method == "GET":
         return render_template("sketch.html")
     if request.method == "POST":
@@ -150,11 +160,22 @@ def ready():
         prediction = model.predict(img)
         probability = prediction[0][2]
         print(prediction)
+
+        #Checking prediction
+        # for i in range(3):
+        #     # new = round(it,2)
+        #     # l = []
+        #     # l.append(new)
+
+        #     new = round(prediction[0][i],2)
+        #     p = []
+        #     p.append(new)
+        # print(p)
         # a = np.array(prediction)
         # print(a.shape)
 
 
-        Decision ={0: "eyes", 1: "lip",2:"nose"}
+        Decision ={0: "eye", 1: "lip",2:"nose"}
         # probability = np.argmax(prediction)
         #Making Prediction
         result = Decision[np.argmax(prediction)]
@@ -170,8 +191,23 @@ def ready():
         items = [imageList,result]
         list_lenght = len(imageList)
         one_picture = random.choice(imageList)
-        print(one_picture)
-        print(probability)
+
+        if os.stat("data.txt").st_size != 0:
+            c = suggestion_valid()
+        if result == "nose":
+            steps+=1
+            one_picture = f"/suggestions/nose_doodle_dataset/nose-{c}.PNG"
+        if result == "eye":
+            one_picture = f"/suggestions/eye_doodle_dataset/eye-{c}.PNG"
+           
+        if result == "lip":
+            steps+=1
+
+        file = open("data.txt","r+")
+        x = file.readlines()
+
+        # print(one_picture)
+        # print(probability)
 
         content = {
             "image":one_picture,
@@ -179,7 +215,11 @@ def ready():
             "Prediction":result
         }
         # return render_template('sketch.html',imageList =one_picture,pro=probability)
-        print(result)
+        # print(result)
+
+        if steps > 3:
+            print(steps)
+
         return render_template('sketch.html',image=one_picture,Probability=probability,Prediction=result)
 
 
@@ -233,42 +273,93 @@ def test():
     result = json.loads(output) #this converts the json output to a python dictionary
     print(result) # Printing the new dictionary
     print(type(result))#this shows the json converted as a python dictionary
-    file = open("data.txt","w")
-    file.write(result['userInfo'])
+    file = open("data.txt","a")
+    file.writelines(result['userInfo'] + "\n")
+    # file.write("\n")
+    file.close()
+    # file.writelines(result['userInfo'] + "/n")
         # return render_template("match.html",imf = result)
     return "Information Recieved Successfully"
 
+
+
+
+# @app.route("/formation",methods=['GET'])
+def img_formation():
+        c = suggestion_valid()
+        file = open("data.txt",'r+')
+        line = file.readlines()
+        # static\suggestions\head_doodle_dataset\head-4.PNG
+        img1 = cv2.imread(f"./static//suggestions/head_doodle_dataset/head-{c}.PNG")
+        img2 = cv2.imread("."+line[2].strip())
+        img3 = cv2.imread("."+line[1].strip())
+        img4 = cv2.imread("."+line[0].strip())
+        
+
+        img_v_resize = vconcat_resize_min([img1, img2, img3,img4])
+
+        
+        # show the output image
+        cv2.imwrite(f'./static/vconcat_resize_({c}).jpg', img_v_resize)
+        # clean()
+        print("success")
+        return None
+
+
 @app.route("/match",methods=["POST","GET"])
 def match():
-    filename = open("data.txt",'r+')
-    image_path = "./"+filename.read()
+    c = suggestion_valid()
+    img_formation()
+    image_path = f"./static/vconcat_resize_({c}).jpg"
     if request.method == "POST":
         new = image_matching(image_path)
         return render_template("match.html",imf =image_path,iff = new  )
+    return render_template("match.html" ,imf = image_path)
 
-    return render_template("match.html",imf =image_path )
-
-    
-    
 def image_matching(image_1):
-    newI = ""
     file = os.listdir("./static/original")
     for i in file:
         original = cv2.imread(image_1)
         duplicate = cv2.imread("./static/original/{k}".format(k=i))# 1) Check if 2 images are equals
-        print(original.shape)
-        print(duplicate.shape)
+        # print(original.shape)
+        # print(duplicate.shape)
         if original.shape == duplicate.shape:
             print("The images have same size and channels")
             difference = cv2.subtract(original, duplicate)
-            print(difference)
             b, g, r = cv2.split(difference)
-            print(b,g,r)
+            
 
             if cv2.countNonZero(b) == 0 and cv2.countNonZero(g) == 0 and cv2.countNonZero(r) == 0:
                 print("The images are completely Equal")
             return(f"./static/original/{i}")
             
 
+
+def suggestion_valid():
+    rf = open('data.txt')
+    lines = rf.readlines()
+    for items in range(1):
+        x = re.findall("[0-9]+",lines[items])
+    if len(x) == 0:
+        return False
+    else:
+        return x[0]
+
+
+
+import cv2
+import numpy as np
+
+
+# Concatenate images of different widths verticallys
+
+def vconcat_resize_min(im_list, interpolation=cv2.INTER_CUBIC):
+    w_min = min(im.shape[1] for im in im_list)
+    im_list_resize = [cv2.resize(im, (w_min, int(im.shape[0] * w_min / im.shape[1])), interpolation=interpolation)
+                      for im in im_list]
+    return cv2.vconcat(im_list_resize)
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    # app.run(debug=True,host="0.0.0.0")
+    app.run(debug=True,host="0.0.0.0")
